@@ -5,11 +5,10 @@ class OpenAIHandler:
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
 
-    def create_thread(self, messages, assistant_id):
+    def create_thread(self, messages):
         try:
             thread = self.client.beta.threads.create(
-                messages=messages,
-                assistant_id=assistant_id
+                messages=messages
             )
             return thread
         except Exception as e:
@@ -48,7 +47,7 @@ class OpenAIHandler:
         
     def execute_openai_workflow(self, initial_message, assistant_id):
         # Create a thread
-        thread = self.create_thread(messages=[initial_message], assistant_id=assistant_id)
+        thread = self.create_thread(messages=[initial_message])
         if not thread:
             return None
 
