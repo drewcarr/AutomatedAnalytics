@@ -1,6 +1,6 @@
 import pandas as pd
 
-from cleaning.DataCleaningPipeline import DataCleaningPipeline
+from DataCollection.cleaning.DataCleaningPipeline import DataCleaningPipeline
 
 class DataCleaner:
     def __init__(self):

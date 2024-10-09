@@ -2,14 +2,14 @@ from operator import add
 from langchain_openai import OpenAI
 from langgraph.graph import StateGraph, END, START, MessagesState
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, AnyMessage
-from typing import Annotated, Literal, TypedDict, List
+from typing_extensions import Annotated, Literal, TypedDict, List
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 from dotenv import load_dotenv, dotenv_values
 
-from langchain_core.tools import tool
+from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
-from .DataRequirements import DataRequirements
-from .DataCollectorGraph import DataCollector
+from DataCollection.DataRequirements import DataRequirements
+from DataCollection.DataCollectorGraph import DataCollector
 
 # Sets the env to local env - good for automatically setting the OPENAI_API_KEY
 load_dotenv("./env")
@@ -30,8 +30,7 @@ class EntryGraph:
         tool_node = ToolNode(tools)
 
         # llm = OpenAI(openai_api_key=openai_api_key, temperature=0).bind_tools(tools)
-        self.entry_agent = OpenAIAssistantRunnable(clientOptions={api_key: openai_api_key}, 
-                                                    assistant_id="asst_FoVIrrN19O1HTH1vL2gYgZs4", 
+        self.entry_agent = OpenAIAssistantRunnable(assistant_id="asst_FoVIrrN19O1HTH1vL2gYgZs4", 
                                                     as_agent=True,
                                                     tools=tools)
 
@@ -136,9 +135,7 @@ class EntryGraph:
 
 
 if __name__ == "__main__":
-    env_variables = dotenv_values("./env")
-    api_key = env_variables["OPENAI_API_KEY"]
-    assistant_id = env_variables["ENTRY_ASSISTANT_ID"]
+    
     
     chat = EntryGraph(api_key)
     chat.run_graph()

@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, BaseMessage
-from typing import TypedDict, List, Callable
+from typing_extensions import TypedDict, List, Callable
 from langgraph.prebuilt import ToolExecutor
 
 # Step 1: Define the state of the graph that will track the conversation

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from sentence_transformers import SentenceTransformer, util
-from typing import Optional, List, Dict, Literal, TypedDict
+from typing_extensions import Optional, List, Dict, Literal, TypedDict
 
 class Dataset(TypedDict):
     id: str
