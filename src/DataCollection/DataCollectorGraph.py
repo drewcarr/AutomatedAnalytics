@@ -1,16 +1,16 @@
 from operator import add
-from DataGatherer import DataGatherer
-from DataValidator import DataValidator
+from DataCollection.DataGatherer import DataGatherer
+from DataCollection.DataValidator import DataValidator
 from DataCollection.cleaning.DataCleaner import DataCleaner
-from DataFormatter import DataFormatter
+from DataCollection.DataFormatter import DataFormatter
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, AIMessage
-from typing import Annotated, Literal, TypedDict, List, Dict
-from langchain_core import tool
+from typing_extensions import Annotated, Literal, TypedDict, List, Dict
+from langchain_core.tools import tool
 from enum import Enum
 
-from DataRequirements import DataRequirements
+from DataCollection.DataRequirements import DataRequirements
 from langgraph.prebuilt import ToolNode
 
 """ 
@@ -61,7 +61,7 @@ class DataCollector:
 
         """ Add edges """
         self.graph_builder.add_edge(DataCollectorNodes.TOOLS.value, DataCollectorNodes.ORCHESTRATOR.value)
-        self.graph_builder.add_conditional_edge(DataCollectorNodes.ORCHESTRATOR.value, self.orchestrator_router)
+        self.graph_builder.add_conditional_edges(DataCollectorNodes.ORCHESTRATOR.value, self.orchestrator_router)
 
     def invoke_orchestrator(self, state: DataCollectorState):
         messages = state["messages"]

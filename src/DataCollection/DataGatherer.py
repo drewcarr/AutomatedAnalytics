@@ -1,11 +1,11 @@
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END, START
 from langchain_core.messages import AIMessage
-from typing import Annotated, TypedDict, List
+from typing_extensions import Annotated, TypedDict, List
 from langgraph.prebuilt import ToolNode
 from enum import Enum
-from DatasetMetadata import DatasetMetadata  # Import the new DatasetMetadata class
-from DataRequirements import DataRequirements
+from DataCollection.DatasetMetadata import DatasetMetadata  # Import the new DatasetMetadata class
+from DataCollection.DataRequirements import DataRequirements
 
 
 class DataGathererNodes(Enum):
@@ -25,27 +25,27 @@ class DataGatherer:
     def __init__(self):
         self.graph_builder = StateGraph(DataGathererState)
 
-        """ Setup tools for gathering data """
-        tools = [
-            self.check_metadata,  # Check metadata for local or API data
-            self.web_scraping,    # Web scraping as fallback
-            self.create_new_api   # Create a new API connection if necessary
-        ]
-        tool_node = ToolNode(tools)
+        # """ Setup tools for gathering data """
+        # tools = [
+        #     self.check_metadata,  # Check metadata for local or API data
+        #     self.web_scraping,    # Web scraping as fallback
+        #     self.create_new_api   # Create a new API connection if necessary
+        # ]
+        # tool_node = ToolNode(tools)
 
-        """ Add LLM """
-        self.orchestrator = ChatOpenAI().bind_tools(tools)
+        # """ Add LLM """
+        # self.orchestrator = ChatOpenAI().bind_tools(tools)
 
-        """ Add nodes """
-        self.graph_builder.add_node(DataGathererNodes.CHECK_METADATA.value, self.check_metadata)
-        self.graph_builder.add_node(DataGathererNodes.WEB_SCRAPING.value, self.web_scraping)
-        self.graph_builder.add_node(DataGathererNodes.NEW_API_CONNECTION.value, self.create_new_api)
-        self.graph_builder.add_node(DataGathererNodes.END.value, END)
+        # """ Add nodes """
+        # self.graph_builder.add_node(DataGathererNodes.CHECK_METADATA.value, self.check_metadata)
+        # self.graph_builder.add_node(DataGathererNodes.WEB_SCRAPING.value, self.web_scraping)
+        # self.graph_builder.add_node(DataGathererNodes.NEW_API_CONNECTION.value, self.create_new_api)
+        # self.graph_builder.add_node(DataGathererNodes.END.value, END)
 
-        """ Define edges for decision making """
-        self.graph_builder.add_edge(DataGathererNodes.CHECK_METADATA.value, DataGathererNodes.WEB_SCRAPING.value)
-        self.graph_builder.add_edge(DataGathererNodes.WEB_SCRAPING.value, DataGathererNodes.NEW_API_CONNECTION.value)
-        self.graph_builder.add_edge(DataGathererNodes.NEW_API_CONNECTION.value, DataGathererNodes.END.value)
+        # """ Define edges for decision making """
+        # self.graph_builder.add_edge(DataGathererNodes.CHECK_METADATA.value, DataGathererNodes.WEB_SCRAPING.value)
+        # self.graph_builder.add_edge(DataGathererNodes.WEB_SCRAPING.value, DataGathererNodes.NEW_API_CONNECTION.value)
+        # self.graph_builder.add_edge(DataGathererNodes.NEW_API_CONNECTION.value, DataGathererNodes.END.value)
 
     def invoke_orchestrator(self, state: DataGathererState):
         """Orchestrator invokes the current state"""

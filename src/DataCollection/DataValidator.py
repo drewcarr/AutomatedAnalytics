@@ -1,4 +1,5 @@
-# DataValidator class for validating collected data
+from typing_extensions import Dict
+
 class DataValidator:
     def validate_data(self, collected_data: Dict):
         if "raw_data" in collected_data:

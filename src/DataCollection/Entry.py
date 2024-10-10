@@ -2,14 +2,14 @@ from operator import add
 from langchain_openai import OpenAI
 from langgraph.graph import StateGraph, END, START, MessagesState
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, AnyMessage
-from typing import Annotated, Literal, TypedDict, List
+from typing_extensions import Annotated, Literal, TypedDict, List
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 from dotenv import load_dotenv, dotenv_values
 
-from langchain_core.tools import tool
+from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
-from DataRequirements import DataRequirements
-from DataCollectorGraph import DataCollector
+from DataCollection.DataRequirements import DataRequirements
+from DataCollection.DataCollectorGraph import DataCollector
 
 # Sets the env to local env - good for automatically setting the OPENAI_API_KEY
 load_dotenv("./env")
@@ -26,12 +26,11 @@ class EntryGraph:
         self.assistant_thread_id = None
 
         """ Set up tools"""
-        tools = [self.set_requirements, self.toggle_requirements_gathered]
+        tools = [self.set_requirements, self.set_requirements_gathered, self.set_other_fields]
         tool_node = ToolNode(tools)
 
         # llm = OpenAI(openai_api_key=openai_api_key, temperature=0).bind_tools(tools)
-        self.entry_agent = OpenAIAssistantRunnable(clientOptions={api_key: openai_api_key}, 
-                                                    assistant_id="asst_FoVIrrN19O1HTH1vL2gYgZs4", 
+        self.entry_agent = OpenAIAssistantRunnable(assistant_id="asst_FoVIrrN19O1HTH1vL2gYgZs4", 
                                                     as_agent=True,
                                                     tools=tools)
 
@@ -111,21 +110,32 @@ class EntryGraph:
     def set_requirements(self, new_requirements: str):
         """ Sets the requirements to a new string """
         print("Activating tool: set_requirements")
-        self.requirements.set_requirements(new_requirements)
+        self.requirements.requirement = new_requirements.strip()
 
     @tool
-    def toggle_requirements_gathered(self, requirements_gathered: bool):
-        """ Toogles whether all requirements have been gathered """
-        print("Activating tool: toogle_requirements_gathered to ", requirements_gathered)
-        self.requirements.requirements_gathered(requirements_gathered)
+    def set_requirements_gathered(self, requirements_gathered: bool):
+        """ Sets whether all requirements have been gathered """
+        print("Activating tool: set_requirements_gathered to", requirements_gathered)
+        self.requirements.requirements_gathered = requirements_gathered
 
+    @tool
+    def set_other_fields(self, **kwargs):
+        """ Sets other fields of DataRequirements using set_fields.
+        Available fields:
+        - requirement (str): Main requirement summarized from the user.
+        - timeframe (str): The timeframe for the data, specifying the period of interest.
+        - granularity (str): The granularity of the data, such as daily, monthly, etc.
+        - domain_context (str): The domain or context for the data, e.g., finance, sports.
+        - filters (dict): Filters to apply to the data, represented as key-value pairs (both keys and values should be strings).
+        - data_source_preferences (str): Preferences for which data sources to use, e.g., specific APIs or websites.
+        - requirements_gathered (bool): A flag indicating whether all necessary requirements have been gathered.
+        """
+        print("Activating tool: set_other_fields with arguments", kwargs)
+        self.requirements.set_fields(**kwargs)
 
 
 if __name__ == "__main__":
-    env_variables = dotenv_values("./env")
-    api_key = env_variables["OPENAI_API_KEY"]
-    assistant_id = env_variables["ENTRY_ASSISTANT_ID"]
+    
     
     chat = EntryGraph(api_key)
     chat.run_graph()
-
