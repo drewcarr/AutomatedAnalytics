@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
-from DataCollection.Entry import EntryGraph
+from Entry.Entry import EntryGraph
 from dotenv import load_dotenv, dotenv_values
 
 

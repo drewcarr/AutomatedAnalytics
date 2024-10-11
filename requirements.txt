@@ -1,0 +1,17 @@
+langchain
+langchain-core
+langchain-openai
+langchain-text-splitters
+langgraph
+langgraph-checkpoint
+numpy
+openai
+pandas
+pydantic
+pydantic_core
+pytest
+python-dateutil
+python-dotenv
+scikit-learn
+scipy
+sentence-transformers
