@@ -1,5 +1,8 @@
 import requests
 
+from model.ApiConnection import ApiConnection
+
+
 class ApiConnectionClient:
     def __init__(self):
         # TODO: eventually point this towards our load balancer
