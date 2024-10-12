@@ -15,9 +15,9 @@ class ApiConnectionClient:
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
 
-    def upsert_api_connection(self, api_connection):
+    def upsert_api_connection(self, api_connection: ApiConnection):
         try:
-            response = requests.put(self.base_url + "/v1/connections", json=api_connection)
+            response = requests.put(self.base_url + "/v1/connections", json=api_connection.__dict__)
             return response.json()
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}

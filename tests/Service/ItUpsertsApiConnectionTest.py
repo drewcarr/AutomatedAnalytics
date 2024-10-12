@@ -36,7 +36,7 @@ def test_upsert_api_connection():
         api_version="v1"
     )
 
-    client.upsert_api_connection(expected.__dict__)
+    client.upsert_api_connection(expected)
 
     response = client.get_api_connection_by_id(1)
     actual = response['message']
