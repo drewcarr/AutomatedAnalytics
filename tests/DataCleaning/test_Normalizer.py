@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from DataCollection.cleaning.Normalizer import Normalizer
+from DataCleaning.Normalizer import Normalizer
 
 def test_normalize():
     data = pd.DataFrame({

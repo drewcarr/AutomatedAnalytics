@@ -1,5 +1,5 @@
 import pandas as pd
-from DataCollection.cleaning.Encoder import Encoder
+from DataCleaning.Encoder import Encoder
 
 def test_encode():
     data = pd.DataFrame({

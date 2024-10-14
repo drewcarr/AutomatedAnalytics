@@ -5,7 +5,7 @@ from Entry.Entry import EntryGraph
 from dotenv import load_dotenv, dotenv_values
 
 
-load_dotenv("./src/DataCollection/.env")
+load_dotenv(".env")
 
 @pytest.fixture
 def entry_graph():

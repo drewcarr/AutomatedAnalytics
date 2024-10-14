@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from DataCollection.cleaning.MissingDataHandler import MissingDataHandler
+from DataCleaning.MissingDataHandler import MissingDataHandler
 
 def test_it_fills_missing_fields():
     data = pd.DataFrame({
