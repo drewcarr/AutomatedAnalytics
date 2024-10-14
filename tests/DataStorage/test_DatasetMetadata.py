@@ -84,10 +84,18 @@ def test_search_by_id(mock_metadata_file):
 
 
 def test_search_by_description(mock_metadata_file):
-    """Test searching for a dataset by its description using the DatasetMetadata method."""
-    dataset = DatasetMetadata.search_by_description("Description of dataset 1.")
-    assert dataset is not None
+    """Test searching for datasets by their description using the DatasetMetadata method."""
+    datasets = DatasetMetadata.search_by_description("Description of dataset 1.")
+    
+    # Ensure that the result is a non-empty list
+    assert datasets is not None
+    assert isinstance(datasets, list)
+    assert len(datasets) > 0
+    
+    # Ensure that at least one dataset in the result matches the expected id
+    dataset = datasets[0]  # If multiple datasets are returned, check the first one
     assert dataset["id"] == "dataset_1"
+
 
 
 def test_list_datasets(mock_metadata_file):
