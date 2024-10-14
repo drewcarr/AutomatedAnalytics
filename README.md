@@ -54,7 +54,7 @@ source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 All dependencies required by the project are listed in the `requirements.txt` file located in the `src/DataCollection/` directory. To install them, run:
 
 ```bash
-pip install -r src/DataCollection/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Install the Project in Editable Mode

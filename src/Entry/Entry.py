@@ -8,11 +8,11 @@ from dotenv import load_dotenv, dotenv_values
 
 from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
-from DataCollection.DataRequirements import DataRequirements
+from common.DataRequirements import DataRequirements
 from DataCollection.DataCollectorGraph import DataCollector
 
 # Sets the env to local env - good for automatically setting the OPENAI_API_KEY
-load_dotenv("./env")
+load_dotenv("../../.env")
 
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add]

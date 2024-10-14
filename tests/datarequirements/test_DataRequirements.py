@@ -1,5 +1,5 @@
 import pytest
-from DataCollection.DataRequirements import DataRequirements
+from common.DataRequirements import DataRequirements
 
 def test_initialization():
     data_req = DataRequirements()

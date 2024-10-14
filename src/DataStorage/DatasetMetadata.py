@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from sentence_transformers import SentenceTransformer, util
 from typing_extensions import Optional, List, Dict, Literal, TypedDict
@@ -6,31 +7,36 @@ from typing_extensions import Optional, List, Dict, Literal, TypedDict
 class Dataset(TypedDict):
     id: str
     description: str
-    data_source: Literal["local", "api"]
-    data_link: str  # Could be a file path for local, or URL for API
+    data_source: Literal["webscraping", "api"]
+    data_link: str  # Should be a url which was scraped from or an api connection
     date_created: str
     date_modified: str
 
 class DatasetMetadata:
     """Static-like class to access dataset metadata and raw data."""
     
-    METADATA_FILE = "./metadata.json"  # Hardcoded path to the metadata file
+    METADATA_FILE = "./metadata.json"  # Default path to the metadata file
     similarity_model = SentenceTransformer('all-MiniLM-L6-v2')  # Preload similarity model
 
     @classmethod
+    def set_metadata_file(cls, file_path: str):
+        """Set the metadata file path for unit testing."""
+        cls.METADATA_FILE = file_path
+
+    @classmethod
     def load_metadata(cls) -> List[Dataset]:
-        """Load metadata from the hardcoded JSON file."""
+        """Load metadata from the JSON file."""
         try:
             with open(cls.METADATA_FILE, 'r') as file:
                 metadata = json.load(file).get("datasets", [])
                 return metadata
         except FileNotFoundError:
-            print("Metadata file not found.")
+            print(f"Metadata file not found at {cls.METADATA_FILE}.")
             return []
 
     @classmethod
     def save_metadata(cls, metadata: List[Dataset]):
-        """Save metadata to the hardcoded JSON file."""
+        """Save metadata to the JSON file."""
         with open(cls.METADATA_FILE, 'w') as file:
             json.dump({"datasets": metadata}, file, indent=4)
 
@@ -106,12 +112,15 @@ class DatasetMetadata:
 
 # Example usage
 if __name__ == "__main__":
+    # Setting a different metadata file for unit testing
+    DatasetMetadata.set_metadata_file("./test_metadata.json")
+
     # Example of adding a dataset
     new_dataset = {
         "id": "stock_prices_2024",
         "description": "Stock prices data for 2024, including daily trading volumes.",
-        "data_source": "local",
-        "data_link": "./data/stock_prices_2024.json"
+        "data_source": "API",
+        "data_link": "https://example.api/stock-prices"
     }
     DatasetMetadata.add_dataset(new_dataset)
 

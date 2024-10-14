@@ -1,6 +1,6 @@
-from DataCollection.cleaning.Encoder import Encoder
-from DataCollection.cleaning.MissingDataHandler import MissingDataHandler
-from DataCollection.cleaning.Normalizer import Normalizer
+from DataCleaning.Encoder import Encoder
+from DataCleaning.MissingDataHandler import MissingDataHandler
+from DataCleaning.Normalizer import Normalizer
 
 class DataCleaningPipeline:
     def __init__(self):
