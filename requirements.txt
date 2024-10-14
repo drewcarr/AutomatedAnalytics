@@ -12,6 +12,7 @@ pydantic_core
 pytest
 python-dateutil
 python-dotenv
+setuptools
 scikit-learn
 scipy
 sentence-transformers

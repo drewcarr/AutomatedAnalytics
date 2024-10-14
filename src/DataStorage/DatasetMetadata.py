@@ -74,8 +74,7 @@ class DatasetMetadata:
     def search_by_description(cls, query: str) -> Optional[Dataset]:
         """Perform a semantic search to find datasets by their description."""
         metadata = cls.load_metadata()
-        best_match = None
-        best_score = -1
+        best_matches = []
 
         query_embedding = cls.similarity_model.encode(query, convert_to_tensor=True)
 
@@ -83,11 +82,10 @@ class DatasetMetadata:
             description_embedding = cls.similarity_model.encode(dataset["description"], convert_to_tensor=True)
             similarity_score = util.pytorch_cos_sim(query_embedding, description_embedding).item()
 
-            if similarity_score > best_score and similarity_score > 0.8:  # Set a threshold for matching
-                best_score = similarity_score
-                best_match = dataset
+            if similarity_score > 0.8:  # Set a threshold for matching
+                best_matches.append(dataset)
 
-        return best_match
+        return best_matches
 
     @classmethod
     def get_raw_data(cls, dataset_id: str) -> Optional[Dict]:
