@@ -1,7 +1,7 @@
 from typing import Optional, Dict
 from DataStorage.DatasetMetadata import DatasetMetadata
 from common.DataRequirements import DataRequirements
-from common.BaseAgent import BaseAgent
+from common.Agents.BaseAgent import BaseAgent
 from langchain_core.messages import AIMessage
 import json
 

@@ -6,7 +6,7 @@ from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 from langchain.tools import tool
 
 class BaseAgent(ABC):
-    def __init__(self, name: str, assistant_id: str, openai_api_key: str, tools: List[tool] = None, temperature: float = 0.7, top_p: float = 1.0, debug_mode=False):
+    def __init__(self, name: str, assistant_id: str, system_prompt: str = None, openai_api_key: str = None, tools: List[tool] = None, temperature: float = 0.7, top_p: float = 1.0, debug_mode=False):
         """
         Initialize a generic agent.
         
@@ -25,11 +25,16 @@ class BaseAgent(ABC):
                                                 temperature=temperature,
                                                 top_p=top_p)
         else:
-            self.llm = OpenAI(openai_api_key=openai_api_key, temperature=temperature, top_p=top_p).bind_tools(self.available_tools)
+            self.llm = OpenAI(openai_api_key=openai_api_key, temperature=temperature, top_p=top_p, system_prompt=system_prompt).bind_tools(self.available_tools)
 
         logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
         self.logger = logging.getLogger(self.name)
         self.logger.debug(f"Agent '{self.name}' initialized")
+
+    @abstractmethod
+    def execute(self) -> Optional[Dict]:
+        """ Should be defined to perform the action of the agent """
+        pass
 
     def invoke(self, state: Dict, thread_id: Optional[str] = None) -> Optional[Dict]:
         """
