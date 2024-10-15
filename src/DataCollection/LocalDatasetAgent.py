@@ -39,7 +39,7 @@ class LocalDatasetAgent(BaseAgent):
         """
         super().__init__(name, assistant_id=self.ASSISTANT_ID, openai_api_key=openai_api_key, tools=tools)
 
-    def execute(self, state: Dict, thread_id: Optional[str] = None) -> Optional[Dict]:
+    def execute(self, state: Dict, thread_id: Optional[str] = None) -> Dict:
         """
         Execute the local dataset search based on the requirements provided in the state.
         Then call the LLM with the data requirements and potential datasets to determine coverage.
@@ -51,14 +51,14 @@ class LocalDatasetAgent(BaseAgent):
         data_requirements: DataRequirements = state.get("data_requirements")
         if not data_requirements:
             self.logger.error("Data requirements not provided in state.")
-            return None
+            return {"Error": "Data requirements not provided in state."}
 
         # Validate the data requirements
         try:
             data_requirements.validate_requirements()
         except ValueError as e:
             self.logger.error(f"Validation error: {str(e)}")
-            return None
+            return {"Error": f"Validation error: {str(e)}"}
 
         # Search for potential datasets that match the requirements
         potential_datasets = self.search_for_datasets(data_requirements)
@@ -66,7 +66,7 @@ class LocalDatasetAgent(BaseAgent):
             self.logger.info(f"Found potential datasets: {potential_datasets}")
         else:
             self.logger.info("No matching datasets found.")
-            return {"potential_datasets": None}
+            return {"dataset_coverages": [DatasetCoverage(dataset_id="None", covered_requirements={}, missing_requirements={})]}
         
         llm_input = {
             "data_requirements": data_requirements.__dict__,
@@ -81,9 +81,26 @@ class LocalDatasetAgent(BaseAgent):
 
         # Call LLM with data requirements and potential datasets
         self.logger.debug(f"Calling LLM with input: {llm_input}")
-        agent_response = self.llm.invoke(state)
+        agent_response = self.invoke(state)
 
-        return agent_response
+        # Overwrite the AIMessage with DatasetCoverage class
+        if agent_response:
+            try:
+                dataset_coverages = [
+                    DatasetCoverage(
+                        dataset_id=coverage.get("dataset_id", "Unknown"),
+                        covered_requirements=coverage.get("covered_requirements", {}),
+                        missing_requirements=coverage.get("missing_requirements", {})
+                    )
+                    for coverage in agent_response
+                ]
+                return {"dataset_coverages": dataset_coverages}
+            except (TypeError, AttributeError, KeyError) as e:
+                self.logger.error(f"Error processing agent response: {str(e)}")
+                return {"Error": f"Error processing agent response: {str(e)}"}
+
+        self.logger.error("No agent response from LocalDatasetAgent")
+        return {"Error": "No agent response from LocalDatasetAgent"}
 
     def search_for_datasets(self, data_requirements: DataRequirements) -> Optional[Dict]:
         """
@@ -109,5 +126,3 @@ class LocalDatasetAgent(BaseAgent):
         # Perform semantic search using DatasetMetadata
         best_matches = DatasetMetadata.search_by_description(search_query)
         return best_matches if len(best_matches) > 0 else None
-
-

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from DataCollection.LocalDatasetAgent import LocalDatasetAgent
+from DataCollection.LocalDatasetAgent import LocalDatasetAgent, DatasetCoverage
 from common.DataRequirements import DataRequirements
 from DataStorage.DatasetMetadata import DatasetMetadata
 
@@ -15,7 +15,13 @@ def mock_agent():
         tools=None,
     )
     agent.logger = MagicMock()
-    agent.invoke = MagicMock(return_value={"messages": [{"content": "Coverage analysis result."}]})
+    agent.invoke = MagicMock(return_value=[
+        {
+            "dataset_id": "dataset_1",
+            "covered_requirements": {"requirement_1": True},
+            "missing_requirements": {"requirement_2": "Not available"}
+        }
+    ])
     return agent
 
 @pytest.fixture
@@ -50,13 +56,14 @@ def test_execute_with_valid_requirements(mock_agent, sample_data_requirements, m
     """
     Test the execute method with valid data requirements.
     """
-    state = {"data_requirements": sample_data_requirements, "messages": []}
+    state = {"data_requirements": sample_data_requirements, "messages": [{"content": "Find stock prices for 2024"}]}
     result = mock_agent.execute(state=state)
 
     # Check if the search_for_datasets and invoke methods were called
     mock_agent.invoke.assert_called_once()
-    assert result == {"messages": [{"content": "Coverage analysis result."}]}
-
+    assert "dataset_coverages" in result
+    assert isinstance(result["dataset_coverages"], list)
+    assert isinstance(result["dataset_coverages"][0], DatasetCoverage)
 
 def test_execute_with_missing_requirements(mock_agent):
     """
@@ -96,7 +103,9 @@ def test_execute_no_matching_datasets(mock_agent, sample_data_requirements):
 
     # Ensure no dataset found scenario is handled properly
     mock_agent.logger.info.assert_called_with("No matching datasets found.")
-    assert result == {"message": "No matching datasets found."}
+    assert "dataset_coverages" in result
+    assert isinstance(result["dataset_coverages"], list)
+    assert result["dataset_coverages"][0].dataset_id == "None"
 
 def test_validate_requirements_failure(mock_agent):
     """
@@ -108,4 +117,19 @@ def test_validate_requirements_failure(mock_agent):
 
     # Ensure validation error is logged
     mock_agent.logger.error.assert_called()
-    assert result is None
+    assert "Error" in result
+    assert "Validation error" in result["Error"]
+
+def test_execute_with_invalid_agent_response(mock_agent, sample_data_requirements, mock_dataset_metadata):
+    """
+    Test the execute method when the agent response is invalid or incorrectly formatted.
+    """
+    # Simulate an invalid response
+    mock_agent.invoke = MagicMock(return_value="Invalid response")
+    state = {"data_requirements": sample_data_requirements, "messages": []}
+    result = mock_agent.execute(state=state)
+
+    # Ensure error handling for invalid response
+    mock_agent.logger.error.assert_called()
+    assert "Error" in result
+    assert "Error processing agent response" in result["Error"]
