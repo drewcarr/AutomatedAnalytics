@@ -76,12 +76,9 @@ class LocalDatasetAgent(BaseAgent):
         # Convert llm_input dictionary to a JSON string
         llm_input_str = json.dumps(llm_input)
 
-        # Append the AIMessage with the string content
-        state["messages"].append(AIMessage(content=llm_input_str))
-
         # Call LLM with data requirements and potential datasets
-        self.logger.debug(f"Calling LLM with input: {llm_input}")
-        agent_response = self.invoke(state)
+        self.logger.debug(f"Calling LLM with input: {llm_input_str}")
+        agent_response = self.invoke(llm_input_str)
 
         # Overwrite the AIMessage with DatasetCoverage class
         if agent_response:
