@@ -1,94 +1,53 @@
-from operator import add
-from DataCollection.DataGatherer import DataGatherer
-from DataCollection.DataValidator import DataValidator
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, END
-from langchain_core.messages import BaseMessage, AIMessage
-from typing_extensions import Annotated, Literal, TypedDict, List, Dict
-from langchain_core.tools import tool
-from enum import Enum
+from typing import List, Dict
+from langgraph.prebuilt import ToolNode
+from DataCollection.LocalDatasetAgent import LocalDatasetAgent
+from common.Agents import BaseAgent
+from langchain_core.messages import HumanMessage
 
 from common.DataRequirements import DataRequirements
-from langgraph.prebuilt import ToolNode
+from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseDynamicTeamOrchestrator, BaseTeamState
 
-""" 
-Built on a ReACT Agent framework 
-Encapsulating each stage in its own class to handle responsibilities.
-"""
-
-# Enum for naming the nodes
-class DataCollectorNodes(Enum):
-    ORCHESTRATOR = "orchestrator"
-    TOOLS = "tools"
-    END = "end"
-
-# State to track the data collection process
-class DataCollectorState(TypedDict):
-    messages: Annotated[List[BaseMessage], add]
-    data_source: str
-    data_requirements: DataRequirements
-    current_tool: str
-    collected_data: Dict
-
-# DataCollector class that orchestrates the tools
-class DataCollector:
-    def __init__(self):
-        self.graph_builder = StateGraph(DataCollectorState)
-        
-        # Initialize the tool classes
-        self.data_gatherer = DataGatherer()
-        self.data_validator = DataValidator()
-
-        """ Setup tools as single calls to the classes """
-        tools = [
-            self.run_data_gatherer,
-            self.run_data_validator,
-        ]
-        tool_node = ToolNode(tools)
-
-        """ Add LLM with tool calling """
-        self.orchestrator = ChatOpenAI().bind_tools(tools)
-
-        """ Add nodes """
-        self.graph_builder.add_node(DataCollectorNodes.ORCHESTRATOR.value, self.invoke_orchestrator)
-        self.graph_builder.add_node(DataCollectorNodes.TOOLS.value, tool_node)
-
-        """ Add edges """
-        self.graph_builder.add_edge(DataCollectorNodes.TOOLS.value, DataCollectorNodes.ORCHESTRATOR.value)
-        self.graph_builder.add_conditional_edges(DataCollectorNodes.ORCHESTRATOR.value, self.orchestrator_router)
-
-    def invoke_orchestrator(self, state: DataCollectorState):
-        messages = state["messages"]
-        response = self.orchestrator.invoke(messages)
-        return {"messages": [response]}
-
-    def orchestrator_router(self, state: DataCollectorState) -> Literal[DataCollectorNodes.TOOLS.value, END]:
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            return DataCollectorNodes.TOOLS.value
-        return END
-
-    def compile_graph(self):
-        return self.graph_builder.compile()
-
-    """ 
-    Define the encapsulated tool steps 
-    TODO: Have the error handler catch anything and debug then route back to the orchestrator
-    The tool node automatically catches error and returns it so orchestrator can try again. Might be enough for now
-    https://langchain-ai.github.io/langgraph/how-tos/tool-calling-errors/?h=error+handling#custom-strategies
+class DataCollectionTeamState(BaseTeamState):
     """
-    
-    @tool
-    def run_data_gatherer(self, state: DataCollectorState):
-        """ Use the DataGatherer class for source identification and data collection """
-        source = self.data_gatherer.identify_data_source(state["data_requirements"])
-        state["data_source"] = source
-        state["collected_data"] = self.data_gatherer.connect_to_api(source)
-        return {"messages": [AIMessage(content="Data gathering complete.")], "current_tool": DataCollectorNodes.TOOLS.value}
+    Extended state for the DataCollectionTeam.
+    messages: Annotated[List[BaseMessage], add]
+    validated: bool
+    next: str
+    Error: str
+    """
+    data_requirements: DataRequirements
 
-    @tool
-    def run_data_validator(self, state: DataCollectorState):
-        """ Use the DataValidator class to validate the collected data """
-        valid, message = self.data_validator.validate_data(state["collected_data"])
-        return {"messages": [AIMessage(content=message)], "current_tool": DataCollectorNodes.TOOLS.value}
+class DataCollectionTeam(BaseDynamicTeamOrchestrator):
+    def __init__(self, debug_mode=False):
+        """
+        Initialize a data collection team orchestrator.
+
+        :param local_dataset_agent: An agent responsible for retrieving data from local datasets.
+        :param tools: A list of tools available to agents.
+        :param validator: The agent responsible for validation.
+        :param debug_mode: Enable or disable debug mode for logging.
+        """
+        local_dataset_agent = LocalDatasetAgent(
+            name="TestLocalDatasetAgent",
+            openai_api_key="test_api_key",
+            tools=None,
+        )
+        agents = [local_dataset_agent]
+        super().__init__(agents, debug_mode)
+
+    def validate(self, state: DataCollectionTeamState) -> DataCollectionTeamState:
+        """
+        Validate the collected data to determine if it meets requirements.
+
+        :param state: The current state of the session.
+        :return: True if the state is valid, False otherwise.
+        """
+        if "data" in state and isinstance(state["data"], dict) and state["data"]:
+            state["validated"] = True
+            self.logger.debug("Validation passed: Data is collected successfully.")
+            return True
+        else:
+            state["validated"] = False
+            state["messages"].append(HumanMessage(content="Data validation failed. More data required."))
+            self.logger.debug("Validation failed: Data is missing or invalid.")
+            return False

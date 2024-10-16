@@ -36,16 +36,14 @@ class BaseAgent(ABC):
         """ Should be defined to perform the action of the agent """
         pass
 
-    def invoke(self, state: Dict, thread_id: Optional[str] = None) -> Optional[Dict]:
+    def invoke(self, content: str, thread_id: Optional[str] = None) -> Optional[Dict]:
         """
-        Generic method to invoke the agent based on the provided mode.
+        Generic method to invoke the llm based on the provided mode.
         
-        :param state: The state of the agent session.
         :param thread_id: Optional thread ID for context.
         :return: The updated state after execution.
         """
-        last_message = state.get("messages", [])[-1]
-        invoke_payload = {"content": last_message.content}
+        invoke_payload = {"content": content}
 
         # Add thread_id if provided
         if thread_id:
@@ -56,7 +54,9 @@ class BaseAgent(ABC):
         self.logger.debug(f"Agent '{self.name}' invoked model with response: {agent_response}" +
                  (f" on thread {thread_id}" if thread_id else ""))
 
-        return {"messages": [agent_response]}
+        # Idk if this wants to automatically place the response into messages, might want to be another state varaible
+        # Might be good to put this responsibility onto the execute function
+        return agent_response
 
 
     def get_tools(self):

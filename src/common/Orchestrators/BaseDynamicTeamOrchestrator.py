@@ -1,24 +1,27 @@
-from typing import List, Dict, Optional, Sequence, Type, TypeVar, Generic
+from typing import List
 from abc import ABC, abstractmethod
 import logging
 import functools
-import operator
-from langchain_openai import ChatOpenAI
+from operator import add
 from langgraph.graph import StateGraph, END, START
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage
 from langgraph.prebuilt import ToolNode
 from typing_extensions import Annotated, TypedDict
 from common.Agents import BaseAgent, DynamicOrchestratorAgent
 
 # Define a generic type for the state
-T = TypeVar('T', bound=TypedDict)
+class BaseTeamState(TypedDict):
+    messages: Annotated[List[BaseMessage], add]
+    validated: bool
+    next: str
+    Error: str
 
-class BaseDynamicTeamOrchestrator(ABC, Generic[T]):
+class BaseDynamicTeamOrchestrator(ABC):
     ORCHESTRATOR_NODE = "ORCHESTRATOR_NODE"
     TOOL_NODE = "TOOL_NODE"
     VALIDATION_NODE = "VALIDATION_NODE"
 
-    def __init__(self, agents: List[BaseAgent], tools: List[ToolNode], validator: BaseAgent, debug_mode=False):
+    def __init__(self, agents: List[BaseAgent], tools: List[ToolNode], debug_mode=False):
         """
         Initialize a dynamic team orchestrator.
 
@@ -29,49 +32,34 @@ class BaseDynamicTeamOrchestrator(ABC, Generic[T]):
         self.agents = agents
         self.agent_map = {agent.name: agent for agent in agents}
         self.tools = tools
-        self.validator = validator
 
         logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"Orchestrator '{self.__class__.__name__}' initialized with agents: {[agent.name for agent in agents]}")
 
-        # Create LLM model for orchestration
-        self.llm = ChatOpenAI(model="gpt-4o")
-
         # Create the state graph
         self.state_graph = self.create_graph()
 
-    @property
     @abstractmethod
-    def state_class(self) -> Type[T]:
-        """
-        Property that returns the class representing the state structure, which should be a TypedDict.
-        """
-        pass
-
-    @abstractmethod
-    def validate(self, state: T) -> bool:
+    def validate(self, state: BaseTeamState) -> BaseTeamState:
         """
         Abstract method to validate whether the answer is accepted.
+        Should set the validated field either True or False
+        If False, should give context back to orchestrator by adding message to state
 
         :param state: The current state of the session.
         :return: True if the state is valid, False otherwise.
         """
         pass
 
-    def create_supervisor(self, system_prompt: str, members: List[str]) -> DynamicOrchestratorAgent:
+    def create_supervisor(self) -> DynamicOrchestratorAgent:
         """
         Create an LLM-based supervisor for routing tasks.
 
-        :param system_prompt: The system prompt for the supervisor.
-        :param members: The names of the agent team members.
         :return: The supervisor node.
         """
-        options = ["FINISH"] + members
-        prompt = (
-            f"{system_prompt}\nGiven the conversation above, who should act next? Or should we FINISH? Select one of: {options}"
-        )
-        return DynamicOrchestratorAgent(system_prompt=prompt, function_call="route")
+        team_members = [agent.name for agent in self.agents]
+        return DynamicOrchestratorAgent(team_members=team_members)
 
     def create_graph(self) -> StateGraph:
         """
@@ -79,17 +67,14 @@ class BaseDynamicTeamOrchestrator(ABC, Generic[T]):
 
         :return: The compiled state graph.
         """
-        state_graph = StateGraph(self.state_class)
+        state_graph = StateGraph(BaseTeamState)
 
         # Create tool node
         tool_node = ToolNode(self.tools)
         state_graph.add_node(self.TOOL_NODE, tool_node)
 
         # Create supervisor node
-        supervisor_agent = self.create_supervisor(
-            "You are a supervisor tasked with managing a conversation between the following workers: {team_members}",
-            [agent.name for agent in self.agents],
-        )
+        supervisor_agent = self.create_supervisor()
         state_graph.add_node(self.ORCHESTRATOR_NODE, supervisor_agent.execute)
 
         state_graph.add_node(self.VALIDATION_NODE, self.validate)
@@ -106,20 +91,26 @@ class BaseDynamicTeamOrchestrator(ABC, Generic[T]):
         for agent in self.agents:
             state_graph.add_edge(agent.name, self.ORCHESTRATOR_NODE)
             
+        """ Orchestrator can route to tools, agents or validation when it thinks it is done """
         state_graph.add_conditional_edges(
             self.ORCHESTRATOR_NODE,
             lambda x: "tool" if "tool_request" in x else x["next"],
             {agent.name: agent.name for agent in self.agents} | {"tool": self.TOOL_NODE, "FINISH": self.VALIDATION_NODE},
         )
+
+        """
+        Validator needs to set the field validated in base class and if True then Finished else back to orchestrator 
+        Note: Validator should add a message that says why not validated
+        """
         state_graph.add_conditional_edges(
             self.VALIDATION_NODE,
-            lambda x: "FINISH" if self.validate(x) else self.ORCHESTRATOR_NODE,
+            lambda state: "FINISH" if state.get("validated", False) else self.ORCHESTRATOR_NODE,
             {"FINISH": END, "ORCHESTRATOR_NODE": self.ORCHESTRATOR_NODE}
-        )
+    )
 
         return state_graph.compile()
 
-    def agent_node(self, state: T, agent: BaseAgent):
+    def agent_node(self, state: BaseTeamState, agent: BaseAgent):
         """
         Wrapper function to invoke an agent.
 
