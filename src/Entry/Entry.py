@@ -95,7 +95,7 @@ class EntryGraph:
         
         print(agent_response)
         
-        return {"messages": [agent_response]}
+        return {"messages": [AIMessage(content=agent_response)]}
 
 
     
@@ -135,7 +135,5 @@ class EntryGraph:
 
 
 if __name__ == "__main__":
-    
-    
     chat = EntryGraph(api_key)
     chat.run_graph()
