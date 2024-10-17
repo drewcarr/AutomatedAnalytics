@@ -27,8 +27,9 @@ class DatasetCoverage:
 
 class LocalDatasetAgent(BaseAgent):
     ASSISTANT_ID = "asst_XdqG6soihubjT90lJdk5kkPA"
+    name = "LocalDatasetAgent"
 
-    def __init__(self, name: str, openai_api_key: str, tools=None):
+    def __init__(self, openai_api_key: str, tools=None):
         """
         Initialize the LocalDatasetAgent.
         
@@ -37,7 +38,7 @@ class LocalDatasetAgent(BaseAgent):
         :param openai_api_key: The OpenAI API key for accessing LLM.
         :param tools: List of tools available for this agent.
         """
-        super().__init__(name, assistant_id=self.ASSISTANT_ID, openai_api_key=openai_api_key, tools=tools)
+        super().__init__(self.name, assistant_id=self.ASSISTANT_ID, openai_api_key=openai_api_key, tools=tools)
 
     def execute(self, state: Dict, thread_id: Optional[str] = None) -> Dict:
         """
