@@ -54,8 +54,7 @@ class BaseAgent(ABC):
         self.logger.debug(f"Agent '{self.name}' invoked model with response: {agent_response}" +
                  (f" on thread {thread_id}" if thread_id else ""))
 
-        # Idk if this wants to automatically place the response into messages, might want to be another state varaible
-        # Might be good to put this responsibility onto the execute function
+        # TODO: does this need to converted to a different type?
         return agent_response
 
 
