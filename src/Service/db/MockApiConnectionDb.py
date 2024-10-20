@@ -1,5 +1,5 @@
 import logging
-from db.model.ApiConnectionStored import ApiConnectionStored
+from Service.db.model.ApiConnectionStored import ApiConnectionStored
 
 class MockDb:
     def __init__(self):

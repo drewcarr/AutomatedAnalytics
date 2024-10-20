@@ -1,6 +1,6 @@
-from db.model.ApiConnectionStored import ApiConnectionStored
-from model.ApiConnection import ApiConnection
-from db.MockDb import MockDb
+from Service.db.model.ApiConnectionStored import ApiConnectionStored
+from Service.model.ApiConnection import ApiConnection
+from Service.db.MockApiConnectionDb import MockDb
 
 class ApiConnectionTranslator:
     def __init__(self, mockDb: MockDb):

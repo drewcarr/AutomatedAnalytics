@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from api.ApiConnectionTranslator import ApiConnectionTranslator
-from model.ApiConnection import ApiConnection
-from db.MockDb import MockDb
+from Service.api.ApiConnectionTranslator import ApiConnectionTranslator
+from Service.model.ApiConnection import ApiConnection
+from Service.db.MockApiConnectionDb import MockDb
 
 app = Flask(__name__)
 CORS(app)

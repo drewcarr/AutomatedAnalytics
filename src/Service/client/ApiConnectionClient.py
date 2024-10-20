@@ -1,6 +1,6 @@
 import requests
 
-from model.ApiConnection import ApiConnection
+from Service.model.ApiConnection import ApiConnection
 
 
 class ApiConnectionClient:
@@ -11,13 +11,13 @@ class ApiConnectionClient:
     def get_api_connection_by_id(self, connection_id: int):
         try:
             response = requests.get(self.base_url + "/v1/connections/" + str(connection_id))
-            return response.json()
+            return ApiConnection(**response.json()['message'])
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
 
     def upsert_api_connection(self, api_connection: ApiConnection):
         try:
             response = requests.put(self.base_url + "/v1/connections", json=api_connection.__dict__)
-            return response.json()
+            return ApiConnection(**response.json()['message'])
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
