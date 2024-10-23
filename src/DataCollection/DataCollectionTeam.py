@@ -1,23 +1,11 @@
 from typing import List, Dict
-from langgraph.prebuilt import ToolNode
-from DataCollection import DataValidatorAgent
+from DataCollection.DataCollectionTeamState import DataCollectionTeamState
+from DataCollection.DataValidatorAgent import DataValidatorAgent
 from DataCollection.LocalDatasetAgent import DatasetCoverage, LocalDatasetAgent
-from common.Agents import BaseAgent
-from langchain_core.messages import HumanMessage
 
-from common.DataRequirements import DataRequirements
-from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseDynamicTeamOrchestrator, BaseTeamState
+from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseDynamicTeamOrchestrator
 
-class DataCollectionTeamState(BaseTeamState):
-    """
-    Extended state for the DataCollectionTeam.
-    messages: Annotated[List[BaseMessage], add]
-    validated: bool
-    next: str
-    Error: str
-    """
-    data_requirements: DataRequirements
-    dataset_coverages: List[DatasetCoverage]
+
 
 class DataCollectionTeam(BaseDynamicTeamOrchestrator):
     def __init__(self, debug_mode=False):
@@ -38,7 +26,7 @@ class DataCollectionTeam(BaseDynamicTeamOrchestrator):
         - Storage Manager
         """
         agents = [local_dataset_agent]
-        super().__init__(agents, debug_mode)
+        super().__init__(agents=agents, debug_mode=debug_mode)
 
     def validate(self, state: DataCollectionTeamState) -> DataCollectionTeamState:
         """

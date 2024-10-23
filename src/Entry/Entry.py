@@ -1,15 +1,14 @@
 from operator import add
-from langchain_openai import OpenAI
-from langgraph.graph import StateGraph, END, START, MessagesState
+from langgraph.graph import StateGraph, END, START
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, AnyMessage
 from typing_extensions import Annotated, Literal, TypedDict, List
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 
 from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
 from common.DataRequirements import DataRequirements
-from DataCollection.DataCollectorGraph import DataCollector
+from DataCollection.DataCollectionTeam import DataCollectionTeam
 
 # Sets the env to local env - good for automatically setting the OPENAI_API_KEY
 load_dotenv("../../.env")
@@ -35,7 +34,7 @@ class EntryGraph:
                                                     tools=tools)
 
         """ Subgraphs"""
-        data_collector = DataCollector()
+        data_collector = DataCollectionTeam()
         
 
         graph_builder = StateGraph(State)
@@ -44,7 +43,7 @@ class EntryGraph:
         graph_builder.add_node("chatbot", self.call_model)
         graph_builder.add_node("user_input", self.user_input)
         graph_builder.add_node("tools", tool_node)
-        graph_builder.add_node("data_collection", data_collector.compile_graph())
+        graph_builder.add_node("data_collection", data_collector.create_graph())
 
         """ Connect nodes with their edges and conditional routing """
         graph_builder.add_edge(START, "user_input")
