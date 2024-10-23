@@ -2,11 +2,12 @@ from typing import List, Optional, Dict
 from common.Agents.BaseAgent import BaseAgent
 import tiktoken
 
-from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseTeamState
+from common.Orchestrators.BaseTeamState import BaseTeamState
 
 class DynamicOrchestratorAgent(BaseAgent):
-    TOKEN_MAX = 1000
-    def __init__(self, name: str, tools=None, team_members=[]):
+    TOKEN_MAX = 50000
+    name="DynamicOrchestratorAgent"
+    def __init__(self, tools: Optional[str]=None, team_members=[]):
         """
         Initialize the LocalDatasetAgent.
         
@@ -20,7 +21,7 @@ class DynamicOrchestratorAgent(BaseAgent):
             f"""You are a supervisor tasked with managing a conversation between the following workers: {team_members}
             \nGiven the conversation above, who should act next? Or should we FINISH? Select one of: {self.options}"""
         )
-        super().__init__(name, system_prompt=system_prompt, tools=tools)
+        super().__init__(self.name, system_prompt=system_prompt, tools=tools)
 
     def count_tokens(self, text: str) -> int:
         """Counts tokens using a tokenizer."""
@@ -44,7 +45,6 @@ class DynamicOrchestratorAgent(BaseAgent):
         # Join the selected messages in chronological order
         return "\n".join(reversed(result))
 
-
     def execute(self, state: BaseTeamState, thread_id: Optional[str] = None) -> Dict:
         """ 
         TODO: add different strategies for selection in future
@@ -56,13 +56,16 @@ class DynamicOrchestratorAgent(BaseAgent):
         """
         recent_context = self.extract_recent_tokens(state["messages"])
 
+        # I am not sending the thread because I don't want the open ai thread to have more in it than it needs
         agent_response = self.invoke(recent_context)
 
         next = agent_response.content
         if next not in self.options:
             self.logger.debug("Received invalid next option from orchestrator", {str(agent_response)})
-            return {"Error": f"Received invalid next option from orchestrator: {str(next)}"}
+            state.update({"Error": f"Received invalid next option from orchestrator: {str(next)}"})
+            return state
         
-        return {"next": next}
+        state.update({"next": next})
+        return state
         
         

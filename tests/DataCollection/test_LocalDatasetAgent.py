@@ -10,7 +10,6 @@ def mock_agent():
     Fixture to create a mock instance of LocalDatasetAgent with mocked dependencies.
     """
     agent = LocalDatasetAgent(
-        name="TestLocalDatasetAgent",
         openai_api_key="test_api_key",
         tools=None,
     )
@@ -74,7 +73,8 @@ def test_execute_with_missing_requirements(mock_agent):
 
     # Check if error was logged
     mock_agent.logger.error.assert_called_with("Data requirements not provided in state.")
-    assert result is None
+    assert "Error" in result
+    assert result["Error"] == "Data requirements not provided in state."
 
 def test_search_for_datasets(mock_agent, sample_data_requirements, mock_dataset_metadata):
     """

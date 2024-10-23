@@ -29,7 +29,7 @@ class LocalDatasetAgent(BaseAgent):
     ASSISTANT_ID = "asst_XdqG6soihubjT90lJdk5kkPA"
     name = "LocalDatasetAgent"
 
-    def __init__(self, openai_api_key: str, tools=None):
+    def __init__(self):
         """
         Initialize the LocalDatasetAgent.
         
@@ -38,9 +38,9 @@ class LocalDatasetAgent(BaseAgent):
         :param openai_api_key: The OpenAI API key for accessing LLM.
         :param tools: List of tools available for this agent.
         """
-        super().__init__(self.name, assistant_id=self.ASSISTANT_ID, openai_api_key=openai_api_key, tools=tools)
+        super().__init__(self.name, assistant_id=self.ASSISTANT_ID)
 
-    def execute(self, state: Dict, thread_id: Optional[str] = None) -> Dict:
+    def execute(self, state: Dict, thread_id: Optional[int]=None) -> Dict:
         """
         Execute the local dataset search based on the requirements provided in the state.
         Then call the LLM with the data requirements and potential datasets to determine coverage.
@@ -52,14 +52,16 @@ class LocalDatasetAgent(BaseAgent):
         data_requirements: DataRequirements = state.get("data_requirements")
         if not data_requirements:
             self.logger.error("Data requirements not provided in state.")
-            return {"Error": "Data requirements not provided in state."}
+            state.update({"Error": "Data requirements not provided in state."})
+            return state
 
         # Validate the data requirements
         try:
             data_requirements.validate_requirements()
         except ValueError as e:
             self.logger.error(f"Validation error: {str(e)}")
-            return {"Error": f"Validation error: {str(e)}"}
+            state.update({"Error": f"Validation error: {str(e)}"})
+            return state
 
         # Search for potential datasets that match the requirements
         potential_datasets = self.search_for_datasets(data_requirements)
@@ -67,7 +69,8 @@ class LocalDatasetAgent(BaseAgent):
             self.logger.info(f"Found potential datasets: {potential_datasets}")
         else:
             self.logger.info("No matching datasets found.")
-            return {"dataset_coverages": [DatasetCoverage(dataset_id="None", covered_requirements={}, missing_requirements={})]}
+            state.update({"dataset_coverages": [DatasetCoverage(dataset_id="None", covered_requirements={}, missing_requirements={})]})
+            return state
         
         llm_input = {
             "data_requirements": data_requirements.__dict__,
@@ -79,7 +82,7 @@ class LocalDatasetAgent(BaseAgent):
 
         # Call LLM with data requirements and potential datasets
         self.logger.debug(f"Calling LLM with input: {llm_input_str}")
-        agent_response = self.invoke(llm_input_str)
+        agent_response = self.invoke(llm_input_str, thread_id=thread_id)
 
         # Overwrite the AIMessage with DatasetCoverage class
         if agent_response:
@@ -92,13 +95,16 @@ class LocalDatasetAgent(BaseAgent):
                     )
                     for coverage in agent_response
                 ]
-                return {"dataset_coverages": dataset_coverages}
+                state.update({"dataset_coverages": dataset_coverages})
+                return state
             except (TypeError, AttributeError, KeyError) as e:
                 self.logger.error(f"Error processing agent response: {str(e)}")
-                return {"Error": f"Error processing agent response: {str(e)}"}
+                state.update({"Error": f"Error processing agent response: {str(e)}"})
+                return state
 
         self.logger.error("No agent response from LocalDatasetAgent")
-        return {"Error": "No agent response from LocalDatasetAgent"}
+        state.update({"Error": "No agent response from LocalDatasetAgent"})
+        return state
 
     def search_for_datasets(self, data_requirements: DataRequirements) -> Optional[Dict]:
         """

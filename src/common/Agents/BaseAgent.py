@@ -1,32 +1,52 @@
 from abc import ABC, abstractmethod
 import logging
-from typing import List, Dict, Optional
-from langchain_openai import OpenAI
+from typing import List, Dict, Optional, Union
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 from langchain.tools import tool
 
+class LLMWrapper:
+    """
+    A wrapper for LLM objects to abstract away differences in method signatures.
+    """
+    def __init__(self, llm: Union[OpenAI, OpenAIAssistantRunnable]):
+        self.llm = llm
+
+    def invoke(self, content: str, thread_id: Optional[str] = None) -> Optional[Dict]:
+        # Handle invocation based on the type of LLM
+        if isinstance(self.llm, OpenAIAssistantRunnable):
+            # Use assistant invocation with thread_id if provided
+            invoke_payload = {"content": content}
+            if thread_id:
+                invoke_payload["thread_id"] = thread_id
+            return self.llm.invoke(invoke_payload)
+        elif isinstance(self.llm, OpenAI):
+            # Use regular OpenAI invocation
+            return self.llm.invoke(input=content)
+        else:
+            raise TypeError("Unsupported LLM type provided to LLMWrapper.")
+
 class BaseAgent(ABC):
-    def __init__(self, name: str, assistant_id: str, system_prompt: str = None, openai_api_key: str = None, tools: List[tool] = None, temperature: float = 0.7, top_p: float = 1.0, debug_mode=False):
+    def __init__(self, name: str, assistant_id: Optional[str] = None, system_prompt: str = None, openai_api_key: str = None, tools: List[tool] = None, temperature: float = 0.7, top_p: float = 1.0, debug_mode=False):
         """
         Initialize a generic agent.
-        
-        :param name: The name of the agent (for identification purposes).
-        :param openai_api_key: The API key to access OpenAI services.
-        :param tools: A list of tools that the agent can use.
-        :param temperature: The temperature parameter for the language model.
-        :param top_p: The top_p parameter for the language model.
         """
         self.name = name
         self.available_tools = tools if tools else []
-        if assistant_id:
-            self.llm = OpenAIAssistantRunnable(assistant_id=assistant_id, 
-                                                as_agent=True,
-                                                tools=tools,
-                                                temperature=temperature,
-                                                top_p=top_p)
-        else:
-            self.llm = OpenAI(openai_api_key=openai_api_key, temperature=temperature, top_p=top_p, system_prompt=system_prompt).bind_tools(self.available_tools)
 
+        # Initialize the LLM based on parameters
+        base_llm = OpenAI(openai_api_key=openai_api_key, temperature=temperature, top_p=top_p, system_prompt=system_prompt)
+        if assistant_id:
+            self.llm = LLMWrapper(OpenAIAssistantRunnable(
+                assistant_id=assistant_id,
+                as_agent=True,
+                tools=self.available_tools,
+                llm=base_llm
+            ))
+        else:
+            self.llm = LLMWrapper(base_llm)
+
+        # Setup logging
         logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
         self.logger = logging.getLogger(self.name)
         self.logger.debug(f"Agent '{self.name}' initialized")
@@ -43,20 +63,14 @@ class BaseAgent(ABC):
         :param thread_id: Optional thread ID for context.
         :return: The updated state after execution.
         """
-        invoke_payload = {"content": content}
-
-        # Add thread_id if provided
-        if thread_id:
-            invoke_payload["thread_id"] = thread_id
-
-        agent_response = self.llm.invoke(invoke_payload)
-
-        self.logger.debug(f"Agent '{self.name}' invoked model with response: {agent_response}" +
-                 (f" on thread {thread_id}" if thread_id else ""))
-
-        # TODO: does this need to converted to a different type?
-        return agent_response
-
+        try:
+            agent_response = self.llm.invoke(content, thread_id)
+            self.logger.debug(f"Agent '{self.name}' invoked model with response: {agent_response}" +
+                              (f" on thread {thread_id}" if thread_id else ""))
+            return agent_response
+        except Exception as e:
+            self.logger.error(f"Invocation failed: {e}")
+            return None
 
     def get_tools(self):
         """
