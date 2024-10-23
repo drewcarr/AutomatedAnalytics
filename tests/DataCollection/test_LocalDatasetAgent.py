@@ -9,10 +9,7 @@ def mock_agent():
     """
     Fixture to create a mock instance of LocalDatasetAgent with mocked dependencies.
     """
-    agent = LocalDatasetAgent(
-        openai_api_key="test_api_key",
-        tools=None,
-    )
+    agent = LocalDatasetAgent()
     agent.logger = MagicMock()
     agent.invoke = MagicMock(return_value=[
         {
