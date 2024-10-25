@@ -19,7 +19,7 @@ class AgentTranslator:
         return Agent(
             id=agent_stored.id,
             name=agent_stored.name,
-            prompt=agent_stored.prompt,
+            system_prompt=agent_stored.system_prompt,
             model=agent_stored.model,
             functions=agent_stored.functions,
             response_format=agent_stored.response_format,
@@ -33,7 +33,7 @@ class AgentTranslator:
         return AgentStored(
             id=agent.id,
             name=agent.name,
-            prompt=agent.prompt,
+            system_prompt=agent.system_prompt,
             model=agent.model,
             functions=agent.functions,
             response_format=agent.response_format,

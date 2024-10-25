@@ -12,7 +12,7 @@ class ItUpsertsAgentTest(IntegrationTestRig):
         expected = Agent(
             id=1,
             name="Test Agent",
-            prompt="Be a test agent",
+            system_prompt="Be a test agent",
             model="gpt-3",
             functions=["test"],
             response_format="json",

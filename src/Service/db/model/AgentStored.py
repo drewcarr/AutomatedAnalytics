@@ -5,7 +5,7 @@ from datetime import datetime
 class AgentStored:
     id: int
     name: str
-    prompt: str
+    system_prompt: str
     model: str
     functions: list[str]
     response_format: str
