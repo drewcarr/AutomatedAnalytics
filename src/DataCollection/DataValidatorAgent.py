@@ -1,12 +1,12 @@
 import json
 from typing import List, Optional
-from common.Agents import BaseThreadAgent
+from common.Agents import OpenAIAgent
 
 class DataSource:
     endpoint: str
     coverage: str
 
-class DataValidatorAgent(BaseThreadAgent):
+class DataValidatorAgent(OpenAIAgent):
     ASSISTANT_ID = "asst_rKWTpHMdWfZDeuxpTootQyhi"
     name = "DataValidatorAgent"
 
@@ -29,7 +29,7 @@ class DataValidatorAgent(BaseThreadAgent):
         super().__init__(self.name, assistant_id=self.ASSISTANT_ID)
 
     def execute(self, thread_id: Optional[int]) -> bool:
-        agent_response = self.invoke("")
+        agent_response = self.invoke(content="", thread_id=thread_id)
 
         response_json = agent_response.messages[0]
 

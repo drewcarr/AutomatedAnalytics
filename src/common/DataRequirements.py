@@ -21,6 +21,20 @@ class DataRequirements:
     # Class-level constant for allowed fields
     ALLOWED_FIELDS = ["requirement", "timeframe", "granularity", "domain_context", "filters", "data_source_preferences", "requirements_gathered"]
 
+    def __str__(self):
+        filters_str = ', '.join(f"{k}: {v}" for k, v in self.filters.items())
+        
+        composed_string = (
+            f"Requirement: {self.requirement or 'Not specified'}\n"
+            f"Timeframe: {self.timeframe or 'Not specified'}\n"
+            f"Granularity: {self.granularity or 'Not specified'}\n"
+            f"Domain Context: {self.domain_context or 'Not specified'}\n"
+            f"Filters: {filters_str if filters_str else 'None'}\n"
+            f"Data Source Preferences: {self.data_source_preferences or 'None'}\n"
+            f"Requirements Gathered: {'Yes' if self.requirements_gathered else 'No'}"
+        )
+        return composed_string
+
     def set_fields(self, **kwargs):
         for key, value in kwargs.items():
             if key in self.ALLOWED_FIELDS:
@@ -54,3 +68,5 @@ class DataRequirements:
 
     def set_requirements_gathered(self, status: bool):
         self.requirements_gathered = status
+
+    

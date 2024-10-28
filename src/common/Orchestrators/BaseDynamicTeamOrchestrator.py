@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 from abc import ABC, abstractmethod
 import logging
 from operator import add
-from common.Agents import BaseThreadAgent
+from common.Agents import OpenAIAgent
 from common.Agents.DynamicOrchestratorAgent import DynamicOrchestratorAgent
 from common.Agents.BaseAgent import BaseAgent
 from openai import OpenAI
@@ -23,7 +23,7 @@ class BaseDynamicTeamOrchestrator(ABC):
         self.agent_map = {agent.name: agent for agent in agents}
         self.tools = tools if tools else []
 
-        self.thread_id = self.create_thread()
+        
         self.max_iterations = max_iterations
 
         logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
@@ -38,9 +38,14 @@ class BaseDynamicTeamOrchestrator(ABC):
         """
         pass
 
-    def create_thread(self) -> int:
+    def create_thread(self, goal: str = None) -> int:
+        # If goal given start the thread with it
         client = OpenAI()
-        thread = client.beta.threads.create()
+        if goal:
+            goal_str = f"Goal of conversation {goal}"
+            thread = client.beta.threads.create(messages=[{"content": goal_str}])
+        else:
+            thread = client.beta.threads.create()
         return thread.id
 
     def create_supervisor(self) -> DynamicOrchestratorAgent:
@@ -52,12 +57,14 @@ class BaseDynamicTeamOrchestrator(ABC):
         team_members = [agent.name for agent in self.agents]
         return DynamicOrchestratorAgent(team_members=team_members)
 
-    def execute(self):
+    def execute(self, goal: str = None):
         """
         Execute the orchestrator workflow by dynamically routing tasks between agents
         until the task is completed or validated.
         """
         self.logger.info("Execution started for dynamic team orchestration with a max iteration count of {}.".format(self.max_iterations))
+
+        self.thread_id = self.create_thread(goal)
 
         # Initialize supervisor orchestrator agent
         orchestrator_agent = self.create_supervisor()
@@ -90,7 +97,7 @@ class BaseDynamicTeamOrchestrator(ABC):
                 self.logger.error(f"Unknown agent name '{next_agent_name}' provided by orchestrator.")
             iteration_count += 1
 
-    def agent_node(self, agent: BaseThreadAgent):
+    def agent_node(self, agent: OpenAIAgent):
         """
         Wrapper function to invoke an agent. Handles thread ID logic.
 

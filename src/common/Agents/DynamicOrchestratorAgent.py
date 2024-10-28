@@ -1,10 +1,9 @@
 from typing import List, Optional, Dict
-from common.Agents import BaseThreadAgent
+from common.Agents import OpenAIAgent
 import tiktoken
 
 
-class DynamicOrchestratorAgent(BaseThreadAgent):
-    TOKEN_MAX = 50000
+class DynamicOrchestratorAgent(OpenAIAgent):
     name="DynamicOrchestratorAgent"
     def __init__(self, tools: Optional[str]=None, team_members=[]):
         """
