@@ -1,41 +1,41 @@
 import json
-from typing import List, Dict, Optional
-from DataCollection.DataCollectionTeamState import DataCollectionTeamState
-from common.Agents.BaseAgent import BaseAgent
-from langchain_core.messages import AIMessage
+from typing import List, Optional
+from common.Agents import BaseThreadAgent
 
-class Response:
-    validated: bool
-    reason: str
+class DataSource:
+    endpoint: str
+    coverage: str
 
-
-class DataValidatorAgent(BaseAgent):
-    """ This assistant will return in json mode"""
+class DataValidatorAgent(BaseThreadAgent):
     ASSISTANT_ID = "asst_rKWTpHMdWfZDeuxpTootQyhi"
     name = "DataValidatorAgent"
 
+    """ Copy of instructions from api - returns json
+    You are a validation agent that will determine whether the team of agents has gathered the correct data sources to serve the DataRequirements.
+    Between all DataCoverage the covered requirements need to address the needs laid out by the DataRequirements. 
+    Reply in json format 
+    {
+        validated: bool,
+        reason: str
+        data_sources: [{
+            endpoint: str
+            coverage: str
+        }...]
+    }
+    """
+
     def __init__(self):
+        self.data_coverage = {}
         super().__init__(self.name, assistant_id=self.ASSISTANT_ID)
 
-    def execute(self, state: DataCollectionTeamState, thread_id: Optional[int]) -> DataCollectionTeamState:
-        data_info = {
-            "data_requirements": state.get("data_requirements").__dict__,
-            "data_coverage": state.get("data_coverage").__dict__
-        }
+    def execute(self, thread_id: Optional[int]) -> bool:
+        agent_response = self.invoke("")
 
-        llm_message = json.dumps(data_info)
+        response_json = agent_response.messages[0]
 
-        agent_response = self.invoke(llm_message)
-
-        if "validated" in agent_response and "reason" in agent_response:
-            state["validated"] = agent_response["validated"]
-            state["messages"].append(
-                AIMessage(content=f"Validated: {agent_response['validated']}, reason: {agent_response['reason']}")
-            )
-        else:
-            self.logger.error("Invalid response from validator agent", agent_response)
-            state["Error"] = state["Error"] = "Invalid response from validator agent"
-        return state
+        return response_json
+        
+    
         
 
 
