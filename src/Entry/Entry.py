@@ -43,7 +43,7 @@ class EntryGraph:
         graph_builder.add_node("chatbot", self.call_model)
         graph_builder.add_node("user_input", self.user_input)
         graph_builder.add_node("tools", tool_node)
-        graph_builder.add_node("data_collection", data_collector.create_graph())
+        graph_builder.add_node("data_collection", data_collector.get_data_sources())
 
         """ Connect nodes with their edges and conditional routing """
         graph_builder.add_edge(START, "user_input")
@@ -95,6 +95,7 @@ class EntryGraph:
         print(agent_response)
         
         return {"messages": [AIMessage(content=agent_response)]}
+
 
 
     
