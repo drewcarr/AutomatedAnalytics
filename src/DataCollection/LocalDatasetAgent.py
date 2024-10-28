@@ -24,7 +24,6 @@ class LocalDatasetAgent(OpenAIAgent):
         Execute the local dataset search based on the requirements provided in the state.
         Then call the LLM with the data requirements and potential datasets to determine coverage.
         
-        :param state: The state containing DataRequirements for the dataset search.
         :param thread_id: Optional thread ID for context.
         :return: The updated state with identified datasets and coverage analysis.
         """
