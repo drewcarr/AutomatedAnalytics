@@ -1,9 +1,9 @@
 from typing import Optional, Dict
 from DataStorage.DatasetMetadata import DatasetMetadata
-from common.Agents import BaseThreadAgent
+from common.Agents import OpenAIAgent
 from common.DataRequirements import DataRequirements
 
-class LocalDatasetAgent(BaseThreadAgent):
+class LocalDatasetAgent(OpenAIAgent):
     ASSISTANT_ID = "asst_XdqG6soihubjT90lJdk5kkPA"
     name = "LocalDatasetAgent"
 

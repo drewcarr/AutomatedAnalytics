@@ -2,6 +2,7 @@ from typing import List, Dict
 from DataCollection.DataValidatorAgent import DataValidatorAgent
 from DataCollection.LocalDatasetAgent import DatasetCoverage, LocalDatasetAgent
 
+from common.DataRequirements import DataRequirements
 from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseDynamicTeamOrchestrator
 
 
@@ -40,7 +41,8 @@ class DataCollectionTeam(BaseDynamicTeamOrchestrator):
         
         return response.validated
 
-    def get_data_sources(self, data_requirements: str):
-        self.execute()
+    def get_data_sources(self, data_requirements: DataRequirements):
+        goal = f"You are tasked with acquiring data sources to achieve the following data requirements \n {str(data_requirements)}"
+        self.execute(goal=goal)
 
         return self.data_sources
