@@ -1,10 +1,9 @@
 from typing import List, Optional, Dict
-from common.Agents.BaseAgent import BaseAgent
+from common.Agents import BaseThreadAgent
 import tiktoken
 
-from common.Orchestrators.BaseTeamState import BaseTeamState
 
-class DynamicOrchestratorAgent(BaseAgent):
+class DynamicOrchestratorAgent(BaseThreadAgent):
     TOKEN_MAX = 50000
     name="DynamicOrchestratorAgent"
     def __init__(self, tools: Optional[str]=None, team_members=[]):
@@ -23,29 +22,7 @@ class DynamicOrchestratorAgent(BaseAgent):
         )
         super().__init__(self.name, system_prompt=system_prompt, tools=tools)
 
-    def count_tokens(self, text: str) -> int:
-        """Counts tokens using a tokenizer."""
-        tokenizer = tiktoken.encoding_for_model("o200k_base")  # Encoding name for gpt-4o
-        return len(tokenizer.encode(text))
-
-    def extract_recent_tokens(self, messages: List[str]) -> str:
-        """Extracts the last `TOKEN_MAX` from the messages."""
-        result = []
-        current_tokens = 0
-
-        # Traverse messages from the end to gather recent tokens
-        for message in reversed(messages):
-            token_count = self.count_tokens(message)
-            if current_tokens + token_count > self.TOKEN_MAX:
-                break  # Stop if adding this message exceeds the token limit
-
-            result.append(message)
-            current_tokens += token_count
-
-        # Join the selected messages in chronological order
-        return "\n".join(reversed(result))
-
-    def execute(self, state: BaseTeamState, thread_id: Optional[str] = None) -> Dict:
+    def execute(self, thread_id: Optional[str] = None) -> Dict:
         """ 
         TODO: add different strategies for selection in future
         Semantic Similarity on descriptions of agents 
@@ -54,18 +31,16 @@ class DynamicOrchestratorAgent(BaseAgent):
         Capability Weighting with Agent Scoring: constantly updating agent relevance scores
         Reinforcement Learning: capture outcome scores and inject here to reinforce good behavior
         """
-        recent_context = self.extract_recent_tokens(state["messages"])
+        messages = self.client.beta.threads.messages.list(thread_id=thread_id)
 
         # I am not sending the thread because I don't want the open ai thread to have more in it than it needs
-        agent_response = self.invoke(recent_context)
+        agent_response = self.invoke(messages)
 
-        next = agent_response.content
+        next = agent_response.content[0]
         if next not in self.options:
             self.logger.debug("Received invalid next option from orchestrator", {str(agent_response)})
-            state.update({"Error": f"Received invalid next option from orchestrator: {str(next)}"})
-            return state
+            # TODO: put in the thread chat that there was an error - either have an error agent handle or have orchestrator contribute to chat
         
-        state.update({"next": next})
-        return state
+        return next
         
         
