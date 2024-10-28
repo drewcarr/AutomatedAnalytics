@@ -1,8 +1,8 @@
 from typing import List, Dict
-from DataCollection.DataCollectionTeamState import DataCollectionTeamState
 from DataCollection.DataValidatorAgent import DataValidatorAgent
 from DataCollection.LocalDatasetAgent import DatasetCoverage, LocalDatasetAgent
 
+from common.DataRequirements import DataRequirements
 from common.Orchestrators.BaseDynamicTeamOrchestrator import BaseDynamicTeamOrchestrator
 
 
@@ -28,11 +28,21 @@ class DataCollectionTeam(BaseDynamicTeamOrchestrator):
         agents = [local_dataset_agent]
         super().__init__(agents=agents, debug_mode=debug_mode)
 
-    def validate(self, state: DataCollectionTeamState) -> DataCollectionTeamState:
+    def validate(self) -> bool:
         """
         Validate the collected data to determine if it meets requirements.
 
         :param state: The current state of the session.
         :return: True if the state is valid, False otherwise.
         """
-        return self.validation_agent.execute(state)
+        response = self.validation_agent.execute(thread_id=self.thread_id)
+
+        self.data_sources = response.data_sources
+        
+        return response.validated
+
+    def get_data_sources(self, data_requirements: DataRequirements):
+        goal = f"You are tasked with acquiring data sources to achieve the following data requirements \n {str(data_requirements)}"
+        self.execute(goal=goal)
+
+        return self.data_sources
