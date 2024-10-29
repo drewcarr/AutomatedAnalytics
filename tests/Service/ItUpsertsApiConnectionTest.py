@@ -1,7 +1,7 @@
 from IntegrationTestRig.IntegrationTestRig import IntegrationTestRig
 
-from client.ApiConnectionClient import ApiConnectionClient
-from model.ApiConnection import ApiConnection
+from Service.client.ApiConnectionClient import ApiConnectionClient
+from Service.model.ApiConnection import ApiConnection
 
 class ItUpsertsApiConnectionTest(IntegrationTestRig):
     resource_file = "ApiConnectionResource.py"
@@ -28,8 +28,7 @@ class ItUpsertsApiConnectionTest(IntegrationTestRig):
 
         client.upsert_api_connection(expected)
 
-        response = client.get_api_connection_by_id(1)
+        actual = client.get_api_connection_by_id(expected.id)
 
-        actual = response['message']
-        assert expected.__dict__ == actual
+        assert expected == actual
 
