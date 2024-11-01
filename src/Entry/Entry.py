@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
+
+from DataCollection.ApiConnection.ApiConnectionTeam import ApiConnectionTeam
 from common.DataRequirements import DataRequirements
 from DataCollection.DataCollectionTeam import DataCollectionTeam
 
@@ -35,7 +37,7 @@ class EntryGraph:
 
         """ Subgraphs"""
         data_collector = DataCollectionTeam()
-        
+        api_connection_finder = ApiConnectionTeam()
 
         graph_builder = StateGraph(State)
         
@@ -44,6 +46,7 @@ class EntryGraph:
         graph_builder.add_node("user_input", self.user_input)
         graph_builder.add_node("tools", tool_node)
         graph_builder.add_node("data_collection", data_collector.get_data_sources())
+        graph_builder.add_node("api_connection", api_connection_finder.get_api_connection(self.requirements))
 
         """ Connect nodes with their edges and conditional routing """
         graph_builder.add_edge(START, "user_input")
