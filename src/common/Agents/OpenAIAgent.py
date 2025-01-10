@@ -4,23 +4,28 @@ from typing import List, Dict, Optional, Callable
 
 from openai import OpenAI
 from openai.types.beta.threads.run import Run
+from common.Agents.BaseAgent import BaseAgent
 
 
-class BaseThreadAgent(ABC):
+class BaseOpenAIAgent(ABC):
     def __init__(self, name: str, assistant_id: Optional[str] = None, system_prompt: Optional[str] = None, openai_api_key: str = None, tools: List[Callable] = None, temperature: float = 0.7, top_p: float = 1.0, debug_mode=False):
-        self.name = name
         self.available_tools = {tool.__name__: tool for tool in tools} if tools else {}
         self.assistant_id = assistant_id
         self.system_prompt = system_prompt
 
-        self.client = OpenAI(api_key=openai_api_key)
+        self.name = name
+
         # Setup logging
-        logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
         self.logger = logging.getLogger(self.name)
         self.logger.debug(f"Agent '{self.name}' initialized")
 
+        self.client = OpenAI(api_key=openai_api_key)
+
+        super.__init__(name=name)
+
     @abstractmethod
-    def execute(self) -> Optional[Dict]:
+    def execute(self, thread_id: Optional[str] = None) -> Optional[Dict]:
         """ Should be defined to perform the action of the agent """
         pass
 
